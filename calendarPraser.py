@@ -8,6 +8,8 @@ from pytz import UTC
 from crontab import CronTab
 import requests
 import shutil
+import sched, time
+import subprocess
 
 # Print iterations progress
 def printProgressBar(iteration, total, prefix='>progress: ', suffix='complete',
@@ -78,6 +80,10 @@ def printEventDetail(gcal):
 def scheduleEvent(gcal, comm):
     ''' Get all details of all scheduled VEVENTs'''
     print '>event list'
+
+    # initialize scheduler for events
+    s = sched.scheduler(time.time, time.sleep)
+
     for component in gcal.walk():
         if component.name == "VEVENT":
             summary = component.get('summary')
@@ -88,24 +94,34 @@ def scheduleEvent(gcal, comm):
             # Create Cron Job base on schedule
             seconds = time_delta.seconds
             seconds = seconds % 60
-            comm0 = comm
-            # + summary + " " + str(seconds)
-            createCronJob(comm0, start_time)
+            comm0 = comm# + summary + " " + str(seconds)
+            # createCronJob(comm0, start_time)
+            scheduleJob(comm0, start_time, s)
 
-            # print component.get('dtstamp').dt
-            # if component.get('rrule') is not None:
-            #     print component.get('rrule').iteritems()
+    s.run()
 
 def createCronJob(comm, dt):
     '''Create Cron Job with Console Command and datetime'''
     print ""
-    cron = CronTab(user=True)
-    job = cron.new(command=comm, user='root')
+    cron = CronTab()
+    job = cron.new(command=comm)
     job.setall(dt)
     # job_std_out = job.run()
     job.enable()
     cron.write()
     print comm + " scheduled at " + str(dt)
+
+def startCapturing(comm, _):
+    print datetime.now()
+    process = subprocess.Popen(comm, stdout=subprocess.PIPE, shell=True)
+    # output, error = process.communicate()
+    return
+
+def scheduleJob(comm, dt, s):
+    time_start = (dt-datetime(1970,1,1)).total_seconds()
+    print comm
+    s.enter((dt-datetime.now()).total_seconds(), 1, startCapturing, (comm, 0))
+    print str((datetime.now()-datetime(1970,1,1)).total_seconds()) + " Job scheduled at " + str(time_start)
 
 
 def initialTest():
@@ -113,11 +129,24 @@ def initialTest():
     cal.add('prodid', '-//My calendar//umass.edu//')
     cal.add('version', '2.0')
 
+    # Event 1
     event = icalendar.Event()
     event.add('summary', 'Python meeting about calendaring')
-    b = datetime.now() + timedelta(0,30)
+    b = datetime.now() + timedelta(0,10)
     event.add('dtstart', b)
-    event.add('dtend', b+ timedelta(0,10))
+    event.add('dtend', b+ timedelta(0,5))
+    event.add('dtstamp', datetime(2017,4,4,0,10,0,tzinfo=UTC))
+    event['uid'] = '20170115T101010/ziweihe@umass.edu'
+    event.add('priority', 5)
+
+    cal.add_component(event)
+
+    # Event 2
+    event = icalendar.Event()
+    event.add('summary', 'Python meeting about calendaring2')
+    b = datetime.now() + timedelta(0,20)
+    event.add('dtstart', b)
+    event.add('dtend', b+ timedelta(0,5))
     event.add('dtstamp', datetime(2017,4,4,0,10,0,tzinfo=UTC))
     event['uid'] = '20170115T101010/ziweihe@umass.edu'
     event.add('priority', 5)
