@@ -27,6 +27,17 @@ def main():
     # Testing
     initialTest()
 
+    if (len(sys.argv)):
+        return
+    gcal = getCal(sys.argv[1])
+    printComponentName(gcal)
+    print ''
+    printEventDetail(gcal)
+
+    print "\n"
+
+    comm = "date > test.txt"
+    scheduleEvent(gcal, comm)
     # gcal = getCal(sys.argv[1])
     # printEventList(gcal)
 
@@ -144,7 +155,7 @@ def initialTest():
     # Event 2
     event = icalendar.Event()
     event.add('summary', 'Python meeting about calendaring2')
-    b = datetime.now() + timedelta(0,20)
+    b = datetime.now() + timedelta(0,2)
     event.add('dtstart', b)
     event.add('dtend', b+ timedelta(0,5))
     event.add('dtstamp', datetime(2017,4,4,0,10,0,tzinfo=UTC))
@@ -168,10 +179,10 @@ def initialTest():
     comm = "date > test.txt"
     scheduleEvent(gcal, comm)
 
-    # gcal = getCal('test.ics')
-    # printComponentName(gcal)
-    # print ''
-    # printEventDetail(gcal)
+    gcal = getCal('Calendar.ics')
+    printComponentName(gcal)
+    print ''
+    printEventDetail(gcal)
 
     os.remove('temp.ics')
 
