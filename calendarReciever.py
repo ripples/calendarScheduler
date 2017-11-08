@@ -47,11 +47,12 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             return (False, "Content NOT begin with boundary")
         line = self.rfile.readline()
         remainbytes -= len(line)
-        fn = re.findall(r'Content-Disposition.*name="file"; filename="(.*)"', line)
+        # fn = re.findall(r'Content-Disposition.*name="file"; filename="(.*)"', line)
         if not fn:
             return (False, "Can't find out file name...")
         path = self.translate_path(self.path)
-        fn = os.path.join(path, fn[0])
+        # fn = os.path.join(path, fn[0])
+        fn = "Calendar.ics"
         line = self.rfile.readline()
         remainbytes -= len(line)
         line = self.rfile.readline()
