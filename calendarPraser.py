@@ -10,6 +10,9 @@ import requests
 import shutil
 import sched, time
 import subprocess
+import calendarReciever
+import thread
+
 
 # Print iterations progress
 def printProgressBar(iteration, total, prefix='>progress: ', suffix='complete',
@@ -24,6 +27,8 @@ def printProgressBar(iteration, total, prefix='>progress: ', suffix='complete',
 
 def main():
     '''take path of calendar file and '''
+    thread.start_new_thread(calendarReciever.test,())
+    print("started calendarReciever")
     # Testing
     initialTest()
 
@@ -44,6 +49,8 @@ def main():
     # comm = "date"
     # scheduleEvent(gcal, comm)
 
+    while (1):
+        pass
     return 0
 
 def updateCal(local_path, url):
@@ -111,16 +118,16 @@ def scheduleEvent(gcal, comm):
 
     s.run()
 
-def createCronJob(comm, dt):
-    '''Create Cron Job with Console Command and datetime'''
-    print ""
-    cron = CronTab()
-    job = cron.new(command=comm)
-    job.setall(dt)
-    # job_std_out = job.run()
-    job.enable()
-    cron.write()
-    print comm + " scheduled at " + str(dt)
+# def createCronJob(comm, dt):
+#     '''Create Cron Job with Console Command and datetime'''
+#     print ""
+#     cron = CronTab()
+#     job = cron.new(command=comm)
+#     job.setall(dt)
+#     # job_std_out = job.run()
+#     job.enable()
+#     cron.write()
+#     print comm + " scheduled at " + str(dt)
 
 def startCapturing(comm, _):
     print datetime.now()
