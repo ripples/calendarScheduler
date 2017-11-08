@@ -69,6 +69,7 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         remainbytes -= len(preline)
         while remainbytes > 0:
             line = self.rfile.readline()
+            print(line)
             remainbytes -= len(line)
             if boundary in line:
                 preline = preline[0:-1]
