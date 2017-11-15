@@ -11,7 +11,7 @@ import shutil
 import sched, time
 import subprocess
 import calendarReciever
-import thread
+from multiprocessing import Process
 
 
 # Print iterations progress
@@ -129,17 +129,6 @@ def scheduleEvent(gcal, comm):
 #     cron.write()
 #     print comm + " scheduled at " + str(dt)
 
-def startCapturing(comm, _):
-    print datetime.now()
-    process = subprocess.Popen(comm, stdout=subprocess.PIPE, shell=True)
-    # output, error = process.communicate()
-    return
-
-def scheduleJob(comm, dt, s):
-    time_start = (dt-datetime(1970,1,1)).total_seconds()
-    print comm
-    s.enter((dt-datetime.now()).total_seconds(), 1, startCapturing, (comm, 0))
-    print str((datetime.now()-datetime(1970,1,1)).total_seconds()) + " Job scheduled at " + str(time_start)
 
 
 def initialTest():
