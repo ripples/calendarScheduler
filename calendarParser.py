@@ -27,7 +27,7 @@ def printProgressBar(iteration, total, prefix='>progress: ', suffix='complete',
     sys.stdout.write('\r%s |%s| %s%% %s' % (prefix, bar, percent, suffix))
     # Print New Line on Complete
     if iteration == total:
-        print ""
+        print("")
 
 
 def main():
@@ -42,7 +42,7 @@ def main():
 
     if (len(sys.argv)):
         return
-    gcal = getCal(sys.argv[1])
+    gcal = getCal(sys.argv[2])
     printComponentName(gcal)
     print ''
     printEventDetail(gcal)
