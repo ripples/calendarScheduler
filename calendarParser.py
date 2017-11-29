@@ -9,10 +9,14 @@ from crontab import CronTab
 import requests
 import shutil
 import sched, time
-import subprocess
-import calendarReciever
 from multiprocessing import Process
 
+import calendarReciever
+from Monitor import Monitor
+
+# Global var CAL to keep track of the current calendar
+CAL = 0
+MONITORS = []
 
 # Print iterations progress
 def printProgressBar(iteration, total, prefix='>progress: ', suffix='complete',
@@ -25,9 +29,13 @@ def printProgressBar(iteration, total, prefix='>progress: ', suffix='complete',
     if iteration == total:
         print ""
 
+
 def main():
     '''take path of calendar file and '''
-    thread.start_new_thread(calendarReciever.test,())
+    # thread.start_new_thread(calendarReciever.test,())
+    p = Process(target=calendarReciever.test, args=())
+    p.start()
+    # p.join()
     print("started calendarReciever")
     # Testing
     initialTest()
@@ -43,12 +51,8 @@ def main():
 
     comm = "date > test.txt"
     scheduleEvent(gcal, comm)
-    # gcal = getCal(sys.argv[1])
-    # printEventList(gcal)
 
-    # comm = "date"
-    # scheduleEvent(gcal, comm)
-
+    # Keep the instance running
     while (1):
         pass
     return 0
@@ -68,6 +72,7 @@ def getCal(filename):
     ''' return Calendar Object from .ics File'''
     g = open(filename, 'rb')
     gcal = icalendar.Calendar.from_ical(g.read())
+    CAL = gcal
     return gcal
 
 def printComponentName(gcal):
@@ -112,23 +117,47 @@ def scheduleEvent(gcal, comm):
             # Create Cron Job base on schedule
             seconds = time_delta.seconds
             seconds = seconds % 60
-            comm0 = comm# + summary + " " + str(seconds)
+            comm0 = comm #+ summary + " " + str(seconds)
+
+            # create new Monitor
+            job = Monitor(s, comm0, start_time)
+            MONITORS.append(job)
             # createCronJob(comm0, start_time)
-            scheduleJob(comm0, start_time, s)
+            # scheduleJob(comm0, start_time, s)
 
-    s.run()
+    # t = threading.Thread(target=s.run)
+    # t.start()
+    for mo in MONITORS:
+        mo.start()
 
-# def createCronJob(comm, dt):
-#     '''Create Cron Job with Console Command and datetime'''
-#     print ""
-#     cron = CronTab()
-#     job = cron.new(command=comm)
-#     job.setall(dt)
-#     # job_std_out = job.run()
-#     job.enable()
-#     cron.write()
-#     print comm + " scheduled at " + str(dt)
 
+def calChangedCB(gcal):
+    '''Callback for calendar change from reciever'''
+    print("Detected calendar changed.")
+    mo_temp = []
+    for component in CAL.walk():
+        if component.name == "VEVENT":
+            summary = component.get('summary')
+            start_time = component.get('dtstart').dt
+            end_time = component.get('dtend').dt
+            time_delta = end_time - start_time
+
+            # Create Cron Job base on schedule
+            seconds = time_delta.seconds
+            seconds = seconds % 60
+            comm0 = comm #+ summary + " " + str(seconds)
+
+            # create new Monitor
+            job = Monitor(s, comm0, start_time)
+            mo_temp.append(job)
+    for mo in MONITORS:
+        if mo not in mo_temp:
+            mo.stop()
+            MONITORS.remove(mo)
+    for mo in mo_temp:
+        if mo not in MONITORS:
+            mo.start()
+            MONITORS.append(mo)
 
 
 def initialTest():
@@ -181,6 +210,7 @@ def initialTest():
     printEventDetail(gcal)
 
     os.remove('temp.ics')
+
 
 if __name__ == "__main__":
     main()

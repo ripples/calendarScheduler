@@ -6,6 +6,10 @@ import cgi
 import shutil
 import mimetypes
 import re
+import calendarParser
+import icalendar
+
+
 try:
     from cStringIO import StringIO
 except ImportError:
@@ -77,6 +81,11 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                     preline = preline[0:-1]
                 out.write(preline)
                 out.close()
+
+                g = open(fn, 'rb')
+                gcal = icalendar.Calendar.from_ical(g.read())
+                calendarParser.calChangedCB(gcal)
+
                 return (True, "File '%s' upload success!" % fn)
             else:
                 out.write(preline)
