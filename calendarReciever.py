@@ -6,14 +6,52 @@ import cgi
 import shutil
 import mimetypes
 import re
-import calendarParser
 import icalendar
-
+import utils
 
 try:
     from cStringIO import StringIO
 except ImportError:
     from StringIO import StringIO
+
+import calendarParser
+from Monitor import Monitor
+from datetime import datetime, timedelta
+import icalendar
+
+def calChangedCB(gcal):
+    '''Callback for calendar change from reciever'''
+    print("Detected calendar changed.")
+    mo_temp = []
+    for component in gcal.walk():
+        if component.name == "VEVENT":
+            summary = component.get('summary')
+            start_time = component.get('dtstart').dt
+            end_time = component.get('dtend').dt
+            time_delta = end_time - start_time
+
+            # Create Cron Job base on schedule
+            seconds = time_delta.seconds
+            seconds = seconds % 60
+            comm0 = calendarParser.COMM #+ summary + " " + str(seconds)
+
+            # create new Monitor
+            job = Monitor(0, comm0, start_time)
+            mo_temp.append(job)
+
+    print(utils.MONITORS)
+    for mo in utils.MONITORS:
+        mo.stop()
+
+    utils.MONITORS = []
+
+    print mo_temp
+    for mo in mo_temp:
+        if mo.dt < datetime.now():
+            continue
+        utils.MONITORS.append(mo)
+    for mo in utils.MONITORS:
+        mo.start()
 
 class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     # Simple HTTP request handler with POST commands.
@@ -56,7 +94,7 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         #     return (False, "Can't find out file name...")
         # path = self.translate_path(self.path)
         # fn = os.path.join(path, fn[0])
-        fn = "Calendar.ics"
+        fn = "ICS/Calendar.ics"
         line = self.rfile.readline()
         remainbytes -= len(line)
         line = self.rfile.readline()
@@ -73,7 +111,7 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         remainbytes -= len(preline)
         while 1:
             line = self.rfile.readline()
-            print(line)
+            # print(line)
             remainbytes -= len(line)
             if boundary in line:
                 preline = preline[0:-1]
@@ -84,7 +122,7 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
                 g = open(fn, 'rb')
                 gcal = icalendar.Calendar.from_ical(g.read())
-                calendarParser.calChangedCB(gcal)
+                calChangedCB(gcal)
 
                 return (True, "File '%s' upload success!" % fn)
             else:
@@ -134,9 +172,9 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
 
 
-def test(HandlerClass = SimpleHTTPRequestHandler,
+def start_server(HandlerClass = SimpleHTTPRequestHandler,
          ServerClass = BaseHTTPServer.HTTPServer):
     BaseHTTPServer.test(HandlerClass, ServerClass)
 
 if __name__ == '__main__':
-    test()
+    start_server()

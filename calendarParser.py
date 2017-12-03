@@ -10,52 +10,59 @@ import requests
 import shutil
 import sched, time
 from multiprocessing import Process
-
+import thread
+import utils
 import calendarReciever
+import subprocess
 from Monitor import Monitor
 
-# Global var CAL to keep track of the current calendar
-CAL = 0
-MONITORS = []
 
-# Print iterations progress
-def printProgressBar(iteration, total, prefix='>progress: ', suffix='complete',
-                     decimals=1, length=50, fill='#'):
-    percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
-    filledLength = int(length * iteration // total)
-    bar = fill * filledLength + '-' * (length - filledLength)
-    sys.stdout.write('\r%s |%s| %s%% %s' % (prefix, bar, percent, suffix))
-    # Print New Line on Complete
-    if iteration == total:
-        print("")
+# Global var CAL to keep track of the current calendar
+CAL = None
+COMM = "date > test.txt"
 
 
 def main():
-    '''take path of calendar file and '''
-    # thread.start_new_thread(calendarReciever.test,())
-    p = Process(target=calendarReciever.test, args=())
-    p.start()
+    '''take path of calendar file and schedule all capturing events'''
+    # thread.start_new_thread(calendarReciever.startServer,())
+    # p = Process(target=calendarReciever.startServer, args=())
+    # p.start()
     # p.join()
-    print("started calendarReciever")
+    # print("started calendarReciever")
     # Testing
-    initialTest()
+    # initialTest()
 
-    if (len(sys.argv)):
+    if (len(sys.argv)<3):
         return
-    gcal = getCal(sys.argv[2])
-    printComponentName(gcal)
+    gcal = utils.getCal(sys.argv[2])
+    CAL = gcal
+    utils.printComponentName(gcal)
     print ''
-    printEventDetail(gcal)
+    utils.printEventDetail(gcal)
 
     print "\n"
 
-    comm = "date > test.txt"
-    scheduleEvent(gcal, comm)
+    scheduleEvent(gcal, COMM)
+    print("scheduled all")
 
-    # Keep the instance running
-    while (1):
+    calendarReciever.start_server()
+    print "here"
+    # Keep the instance running and listen to requests
+    while 1:
         pass
-    return 0
+    # calendarReciever.start_server()
+
+def reload_program_config():
+    '''reload program config'''
+    cancel_all()
+    main()
+
+def program_cleanup():
+    CAL = None
+    cancel_all()
+    utils.MONITORS = []
+    print("Exiting...")
+    exit(0)
 
 def updateCal(local_path, url):
     '''
@@ -68,37 +75,6 @@ def updateCal(local_path, url):
             r.raw.decode_content = True
             shutil.copyfileobj(r.raw, f)
 
-def getCal(filename):
-    ''' return Calendar Object from .ics File'''
-    g = open(filename, 'rb')
-    gcal = icalendar.Calendar.from_ical(g.read())
-    CAL = gcal
-    return gcal
-
-def printComponentName(gcal):
-    ''' Find all components from Calendar'''
-    print '>component list:'
-    for component in gcal.walk():
-        print component.name
-
-def printEventList(gcal):
-    ''' Get all details of all scheduled VEVENTs'''
-    print '>event list'
-    for component in gcal.walk():
-        if component.name == "VEVENT":
-            print component.get('summary')
-
-def printEventDetail(gcal):
-    ''' Get all details of all scheduled VEVENTs'''
-    print '>event list'
-    for component in gcal.walk():
-        if component.name == "VEVENT":
-            print component.get('summary')
-            print component.get('dtstart').dt
-            print component.get('dtend').dt
-            print component.get('dtstamp').dt
-            if component.get('rrule') is not None:
-                print component.get('rrule').iteritems()
 
 def scheduleEvent(gcal, comm):
     ''' Get all details of all scheduled VEVENTs'''
@@ -117,25 +93,32 @@ def scheduleEvent(gcal, comm):
             # Create Cron Job base on schedule
             seconds = time_delta.seconds
             seconds = seconds % 60
-            comm0 = comm #+ summary + " " + str(seconds)
+            comm0 = COMM #+ summary + " " + str(seconds)
 
             # create new Monitor
+            if start_time < datetime.now():
+                continue
             job = Monitor(s, comm0, start_time)
-            MONITORS.append(job)
+            utils.MONITORS.append(job)
             # createCronJob(comm0, start_time)
             # scheduleJob(comm0, start_time, s)
 
     # t = threading.Thread(target=s.run)
     # t.start()
-    for mo in MONITORS:
+    for mo in utils.MONITORS:
         mo.start()
 
+def cancel_all():
+    '''Cancel all scheduled jobs'''
+    for m in utils.MONITORS:
+        m.stop()
+    print("canceled all jobs")
 
 def calChangedCB(gcal):
     '''Callback for calendar change from reciever'''
     print("Detected calendar changed.")
     mo_temp = []
-    for component in CAL.walk():
+    for component in gcal.walk():
         if component.name == "VEVENT":
             summary = component.get('summary')
             start_time = component.get('dtstart').dt
@@ -145,71 +128,73 @@ def calChangedCB(gcal):
             # Create Cron Job base on schedule
             seconds = time_delta.seconds
             seconds = seconds % 60
-            comm0 = comm #+ summary + " " + str(seconds)
+            comm0 = COMM #+ summary + " " + str(seconds)
 
             # create new Monitor
-            job = Monitor(s, comm0, start_time)
+            job = Monitor(0, comm0, start_time)
             mo_temp.append(job)
-    for mo in MONITORS:
-        if mo not in mo_temp:
-            mo.stop()
-            MONITORS.remove(mo)
+
+    print(utils.MONITORS)
+    for mo in utils.MONITORS:
+        mo.stop()
+
+    utils.MONITORS = []
+
+    print mo_temp
     for mo in mo_temp:
-        if mo not in MONITORS:
-            mo.start()
-            MONITORS.append(mo)
+        if mo.dt < datetime.now():
+            continue
+        utils.MONITORS.append(mo)
+    for mo in utils.MONITORS:
+        mo.start()
 
 
 def initialTest():
+    #Read info from Calendar
+    gcal = utils.getCal('ICS/CalendarTest.ics')
+    utils.printComponentName(gcal)
+    print ''
+    utils.printEventDetail(gcal)
+
+
     cal = icalendar.Calendar()
     cal.add('prodid', '-//My calendar//umass.edu//')
     cal.add('version', '2.0')
 
-    # Event 1
-    event = icalendar.Event()
-    event.add('summary', 'Python meeting about calendaring')
-    b = datetime.now() + timedelta(0,10)
-    event.add('dtstart', b)
-    event.add('dtend', b+ timedelta(0,5))
-    event.add('dtstamp', datetime(2017,4,4,0,10,0,tzinfo=UTC))
-    event['uid'] = '20170115T101010/ziweihe@umass.edu'
-    event.add('priority', 5)
-
-    cal.add_component(event)
-
-    # Event 2
-    event = icalendar.Event()
-    event.add('summary', 'Python meeting about calendaring2')
-    b = datetime.now() + timedelta(0,2)
-    event.add('dtstart', b)
-    event.add('dtend', b+ timedelta(0,5))
-    event.add('dtstamp', datetime(2017,4,4,0,10,0,tzinfo=UTC))
-    event['uid'] = '20170115T101010/ziweihe@umass.edu'
-    event.add('priority', 5)
-
-    cal.add_component(event)
+    # Original Calendar
+    now = datetime.now()
+    cal = utils.addEventToCal(gcal=cal, sa=now+timedelta(0,5), ea=now+timedelta(0,8))
+    cal = utils.addEventToCal(gcal=cal, sa=now+timedelta(0,10), ea=now+timedelta(0,13))
 
     f = open('temp.ics', 'wb')
     f.write(cal.to_ical())
     f.close()
 
     # Testing
-    gcal = getCal('temp.ics')
-    printComponentName(gcal)
+    gcal = utils.getCal('temp.ics')
+    utils.printComponentName(gcal)
     print ''
-    printEventDetail(gcal)
+    utils.printEventDetail(gcal)
 
     print "\n"
 
     comm = "date > test.txt"
     scheduleEvent(gcal, comm)
 
-    gcal = getCal('Calendar.ics')
-    printComponentName(gcal)
-    print ''
-    printEventDetail(gcal)
+    time.sleep(5)
 
-    os.remove('temp.ics')
+    n_cal = icalendar.Calendar()
+    n_cal.add('prodid', '-//My calendar//umass.edu//')
+    n_cal.add('version', '2.0')
+
+    n_cal = utils.addEventToCal(gcal=n_cal, sa=now+timedelta(0,5), ea=now+timedelta(0,8))
+    n_cal = utils.addEventToCal(gcal=n_cal, sa=now+timedelta(0,13), ea=now+timedelta(0,16))
+
+    calChangedCB(n_cal)
+
+    #Recover to initial state
+    CAL=None
+    utils.MONITORS=[]
 
 
 if __name__ == "__main__":
