@@ -8,7 +8,7 @@ from calendarParser import (
     )
 
 
-open('/var/run/spam.pid', 'w+')
+open('/var/run/calSch.pid', 'w+')
 
 context = daemon.DaemonContext(
     umask=0o002,

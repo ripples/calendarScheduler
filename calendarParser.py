@@ -70,7 +70,7 @@ def program_cleanup():
     cancel_all()
     utils.MONITORS = []
     print("Exiting...")
-    exit(0)
+    os._exit(0)
 
 def updateCal(local_path, url):
     '''
