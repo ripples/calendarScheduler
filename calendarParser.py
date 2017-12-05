@@ -15,14 +15,21 @@ import utils
 import calendarReciever
 import subprocess
 from Monitor import Monitor
+import signal
 
+
+def signal_handler(signal, frame):
+        print('Exiting...')
+        os._exit(0)
+signal.signal(signal.SIGINT, signal_handler)
+# signal.pause()
 
 # Global var CAL to keep track of the current calendar
 CAL = None
 COMM = "date > test.txt"
 
 
-def main():
+def main(calPath):
     '''take path of calendar file and schedule all capturing events'''
     # thread.start_new_thread(calendarReciever.startServer,())
     # p = Process(target=calendarReciever.startServer, args=())
@@ -32,9 +39,11 @@ def main():
     # Testing
     # initialTest()
 
-    if (len(sys.argv)<3):
+    if (len(sys.argv)<3 and calPath is None):
         return
-    gcal = utils.getCal(sys.argv[2])
+    if calPath is None:
+        calPath = sys.argv[2]
+    gcal = utils.getCal(calPath)
     CAL = gcal
     utils.printComponentName(gcal)
     print ''
@@ -46,7 +55,6 @@ def main():
     print("scheduled all")
 
     calendarReciever.start_server()
-    print "here"
     # Keep the instance running and listen to requests
     while 1:
         pass
@@ -198,4 +206,4 @@ def initialTest():
 
 
 if __name__ == "__main__":
-    main()
+    main('ICS/Calendar.ics')
