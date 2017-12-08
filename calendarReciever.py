@@ -2,10 +2,10 @@ import os
 import posixpath
 import BaseHTTPServer
 import urllib
-import cgi
+# import cgi
 import shutil
-import mimetypes
-import re
+# import mimetypes
+# import re
 import icalendar
 import utils
 
@@ -16,8 +16,10 @@ except ImportError:
 
 import calendarParser
 from Monitor import Monitor
-from datetime import datetime, timedelta
-import icalendar
+from datetime import datetime
+# from datetime import timedelta
+# import icalendar
+
 
 def calChangedCB(gcal):
     '''Callback for calendar change from reciever'''
@@ -33,7 +35,7 @@ def calChangedCB(gcal):
             # Create Cron Job base on schedule
             seconds = time_delta.seconds
             seconds = seconds % 60
-            comm0 = calendarParser.COMM #+ summary + " " + str(seconds)
+            comm0 = calendarParser.COMM + summary + " " + str(seconds)
 
             # create new Monitor
             job = Monitor(0, comm0, start_time)
@@ -52,6 +54,7 @@ def calChangedCB(gcal):
         utils.MONITORS.append(mo)
     for mo in utils.MONITORS:
         mo.start()
+
 
 class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     # Simple HTTP request handler with POST commands.
@@ -80,20 +83,15 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     def deal_post_data(self):
         print self.headers
         boundary = self.headers.plisttext.split("=")[1]
-        print 'Boundary %s' %boundary
+        print 'Boundary %s' % boundary
         remainbytes = int(self.headers['content-length'])
-        print "Remain Bytes %s" %remainbytes
+        print "Remain Bytes %s" % remainbytes
         line = self.rfile.readline()
         remainbytes -= len(line)
-        if not boundary in line:
+        if boundary not in line:
             return (False, "Content NOT begin with boundary")
         line = self.rfile.readline()
         remainbytes -= len(line)
-        # fn = re.findall(r'Content-Disposition.*name="file"; filename="(.*)"', line)
-        # if not fn:
-        #     return (False, "Can't find out file name...")
-        # path = self.translate_path(self.path)
-        # fn = os.path.join(path, fn[0])
         fn = "ICS/Calendar.ics"
         line = self.rfile.readline()
         remainbytes -= len(line)
@@ -102,7 +100,7 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         try:
             out = open(fn, 'wb')
         except IOError:
-            return (False, "Can't create file to write, do you have permission to write?")
+            return (False, "No Write Permission")
 
         if line.strip():
             preline = line
@@ -130,8 +128,6 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 preline = line
         return (False, "Unexpect Ends of data.")
 
-
-
     def translate_path(self, path):
         """Translate a /-separated PATH to the local filename syntax.
 
@@ -141,8 +137,8 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
         """
         # abandon query parameters
-        path = path.split('?',1)[0]
-        path = path.split('#',1)[0]
+        path = path.split('?', 1)[0]
+        path = path.split('#', 1)[0]
         path = posixpath.normpath(urllib.unquote(path))
         words = path.split('/')
         words = filter(None, words)
@@ -150,7 +146,8 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         for word in words:
             drive, word = os.path.splitdrive(word)
             head, word = os.path.split(word)
-            if word in (os.curdir, os.pardir): continue
+            if word in (os.curdir, os.pardir):
+                continue
             path = os.path.join(path, word)
         return path
 
@@ -171,10 +168,10 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         shutil.copyfileobj(source, outputfile)
 
 
-
-def start_server(HandlerClass = SimpleHTTPRequestHandler,
-         ServerClass = BaseHTTPServer.HTTPServer):
+def start_server(HandlerClass=SimpleHTTPRequestHandler,
+                 ServerClass=BaseHTTPServer.HTTPServer):
     BaseHTTPServer.test(HandlerClass, ServerClass)
+
 
 if __name__ == '__main__':
     start_server()

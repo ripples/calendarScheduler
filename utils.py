@@ -1,12 +1,16 @@
 import icalendar
 from datetime import datetime, timedelta
+import sys
 
-MONITORS=[]
+
+MONITORS = []
+
 
 # Print iterations progress
 def printProgressBar(iteration, total, prefix='>progress: ', suffix='complete',
                      decimals=1, length=50, fill='#'):
-    percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
+    percent = ("{0:." +
+               str(decimals) + "f}").format(100 * (iteration / float(total)))
     filledLength = int(length * iteration // total)
     bar = fill * filledLength + '-' * (length - filledLength)
     sys.stdout.write('\r%s |%s| %s%% %s' % (prefix, bar, percent, suffix))
@@ -49,6 +53,7 @@ def printEventDetail(gcal):
             if component.get('rrule') is not None:
                 print component.get('rrule').iteritems()
 
+
 def addEventToCal(gcal=None, sd=None, ed=None, sa=None, ea=None):
     if not gcal:
         return None
@@ -56,16 +61,17 @@ def addEventToCal(gcal=None, sd=None, ed=None, sa=None, ea=None):
     '''Add event to gcal'''
     event.add('summary', datetime.strftime(datetime.now(), '%c'))
     if (sd and ed):
-        b = datetime.now() + timedelta(0,sd)
+        b = datetime.now() + timedelta(0, sd)
         event.add('dtstart', b)
-        event.add('dtend', b+ timedelta(0,ed))
+        event.add('dtend', b + timedelta(0, ed))
     elif (sa and ea):
         event.add('dtstart', sa)
         event.add('dtend', ea)
     else:
         return gcal
     event.add('dtstamp', datetime.now())
-    event['uid'] = datetime.strftime(datetime.now(), '%c').strip()+'/ziweihe@umass.edu'
+    event['uid'] = datetime.strftime(datetime.now(), '%c').strip()
+    +'/ziweihe@umass.edu'
     event.add('priority', 5)
     gcal.add_component(event)
     return gcal

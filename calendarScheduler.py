@@ -1,7 +1,8 @@
 import daemon
-import lockfile, signal
+import lockfile
+import signal
 from calendarParser import (
-    initialTest,
+    # initialTest,
     main,
     program_cleanup,
     reload_program_config,

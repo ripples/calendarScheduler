@@ -1,28 +1,26 @@
 import os
 import sys
 import time
-import math
 from datetime import datetime, timedelta
 import icalendar
-from pytz import UTC
-from crontab import CronTab
 import requests
 import shutil
-import sched, time
-from multiprocessing import Process
-import thread
+import sched
 import utils
 import calendarReciever
-import subprocess
 from Monitor import Monitor
 import signal
 
 
 def signal_handler(signal, frame):
-        print('Exiting...')
-        os._exit(0)
+    '''Force quit when detected Ctrl+C'''
+    print('Exiting...')
+    os._exit(0)
+
+
 signal.signal(signal.SIGINT, signal_handler)
 # signal.pause()
+
 
 # Global var CAL to keep track of the current calendar
 CAL = None
@@ -31,15 +29,12 @@ COMM = "date > test.txt"
 
 def main(calPath):
     '''take path of calendar file and schedule all capturing events'''
-    # thread.start_new_thread(calendarReciever.startServer,())
-    # p = Process(target=calendarReciever.startServer, args=())
-    # p.start()
-    # p.join()
-    # print("started calendarReciever")
+    global CAL
     # Testing
     # initialTest()
 
-    if (len(sys.argv)<3 and calPath is None):
+    # If
+    if (len(sys.argv) < 3 and calPath is None):
         return
     if calPath is None:
         calPath = sys.argv[2]
@@ -60,17 +55,21 @@ def main(calPath):
         pass
     # calendarReciever.start_server()
 
+
 def reload_program_config():
     '''reload program config'''
     cancel_all()
     main()
 
+
 def program_cleanup():
+    global CAL
     CAL = None
     cancel_all()
     utils.MONITORS = []
     print("Exiting...")
     os._exit(0)
+
 
 def updateCal(local_path, url):
     '''
@@ -101,7 +100,7 @@ def scheduleEvent(gcal, comm):
             # Create Cron Job base on schedule
             seconds = time_delta.seconds
             seconds = seconds % 60
-            comm0 = COMM #+ summary + " " + str(seconds)
+            comm0 = COMM + " " + summary + " " + str(seconds)
 
             # create new Monitor
             if start_time < datetime.now():
@@ -116,11 +115,13 @@ def scheduleEvent(gcal, comm):
     for mo in utils.MONITORS:
         mo.start()
 
+
 def cancel_all():
     '''Cancel all scheduled jobs'''
     for m in utils.MONITORS:
         m.stop()
     print("canceled all jobs")
+
 
 def calChangedCB(gcal):
     '''Callback for calendar change from reciever'''
@@ -136,7 +137,7 @@ def calChangedCB(gcal):
             # Create Cron Job base on schedule
             seconds = time_delta.seconds
             seconds = seconds % 60
-            comm0 = COMM #+ summary + " " + str(seconds)
+            comm0 = COMM + " " + summary + " " + str(seconds)
 
             # create new Monitor
             job = Monitor(0, comm0, start_time)
@@ -158,12 +159,13 @@ def calChangedCB(gcal):
 
 
 def initialTest():
-    #Read info from Calendar
+    global CAL
+    '''Tests if everything works as usual'''
+    # Read info from Calendar
     gcal = utils.getCal('ICS/CalendarTest.ics')
     utils.printComponentName(gcal)
     print ''
     utils.printEventDetail(gcal)
-
 
     cal = icalendar.Calendar()
     cal.add('prodid', '-//My calendar//umass.edu//')
@@ -171,8 +173,10 @@ def initialTest():
 
     # Original Calendar
     now = datetime.now()
-    cal = utils.addEventToCal(gcal=cal, sa=now+timedelta(0,5), ea=now+timedelta(0,8))
-    cal = utils.addEventToCal(gcal=cal, sa=now+timedelta(0,10), ea=now+timedelta(0,13))
+    cal = utils.addEventToCal(gcal=cal, sa=now+timedelta(0, 5),
+                              ea=now+timedelta(0, 8))
+    cal = utils.addEventToCal(gcal=cal, sa=now+timedelta(0, 10),
+                              ea=now+timedelta(0, 13))
 
     f = open('temp.ics', 'wb')
     f.write(cal.to_ical())
@@ -195,14 +199,16 @@ def initialTest():
     n_cal.add('prodid', '-//My calendar//umass.edu//')
     n_cal.add('version', '2.0')
 
-    n_cal = utils.addEventToCal(gcal=n_cal, sa=now+timedelta(0,5), ea=now+timedelta(0,8))
-    n_cal = utils.addEventToCal(gcal=n_cal, sa=now+timedelta(0,13), ea=now+timedelta(0,16))
+    n_cal = utils.addEventToCal(gcal=n_cal, sa=now+timedelta(0, 5),
+                                ea=now+timedelta(0, 8))
+    n_cal = utils.addEventToCal(gcal=n_cal, sa=now+timedelta(0, 13),
+                                ea=now+timedelta(0, 16))
 
     calChangedCB(n_cal)
 
-    #Recover to initial state
-    CAL=None
-    utils.MONITORS=[]
+    # Recover to initial state
+    CAL = None
+    utils.MONITORS = []
 
 
 if __name__ == "__main__":
