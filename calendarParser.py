@@ -25,7 +25,7 @@ signal.signal(signal.SIGINT, signal_handler)
 # Global var CAL to keep track of the current calendar
 CAL = None
 # COMM = "date > test.txt"
-COMM = "~/poal-code/setup"
+COMM = "~/paol-code/setupCaptureGUI/PAOL-LecCap-GUI"
 
 
 def main(calPath):
@@ -99,8 +99,8 @@ def scheduleEvent(gcal, comm):
             time_delta = end_time - start_time
 
             # Create Cron Job base on schedule
-            seconds = time_delta.seconds
-            seconds = seconds % 60
+            seconds = time_delta.total_seconds()
+            #seconds = seconds % 60
             comm0 = COMM + " " + summary + " " + str(seconds)
 
             # create new Monitor
@@ -136,8 +136,8 @@ def calChangedCB(gcal):
             time_delta = end_time - start_time
 
             # Create Cron Job base on schedule
-            seconds = time_delta.seconds
-            seconds = seconds % 60
+            seconds = time_delta.total_seconds
+            #seconds = seconds % 60
             comm0 = COMM + " " + summary + " " + str(seconds)
 
             # create new Monitor
