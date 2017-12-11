@@ -24,7 +24,8 @@ signal.signal(signal.SIGINT, signal_handler)
 
 # Global var CAL to keep track of the current calendar
 CAL = None
-COMM = "date > test.txt"
+# COMM = "date > test.txt"
+COMM = "~/poal-code/setup"
 
 
 def main(calPath):
