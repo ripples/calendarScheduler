@@ -2,6 +2,7 @@ import os
 import sys
 import time
 from datetime import datetime, timedelta
+import pytz
 import icalendar
 import requests
 import shutil
@@ -127,6 +128,8 @@ def cancel_all():
 def calChangedCB(gcal):
     '''Callback for calendar change from reciever'''
     print("Detected calendar changed.")
+    timezone= pytz.timezone("US/Eastern")
+
     mo_temp = []
     for component in gcal.walk():
         if component.name == "VEVENT":
@@ -146,13 +149,15 @@ def calChangedCB(gcal):
 
     print(utils.MONITORS)
     for mo in utils.MONITORS:
+        if mo.dt < timezone.localize(datetime.now()):
+            continue
         mo.stop()
 
     utils.MONITORS = []
 
     print mo_temp
     for mo in mo_temp:
-        if mo.dt < datetime.now():
+        if mo.dt < timezone.localize(datetime.now()):
             continue
         utils.MONITORS.append(mo)
     for mo in utils.MONITORS:
