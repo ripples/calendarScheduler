@@ -2,6 +2,7 @@ from datetime import datetime
 from threading import Timer
 
 import subprocess
+import pytz
 
 
 def is_equal(mo1, mo2):
@@ -32,10 +33,12 @@ class Monitor:
         return
 
     def scheduleJob(self):
+	print "Scheduling " + self.comm
         comm = self.comm
         dt = self.dt
+        timezone=pytz.timezone("US/Eastern")
         # time_start = (dt-datetime(1970, 1, 1)).total_seconds()
-        self.t = Timer((dt-datetime.now()).total_seconds(),
+        self.t = Timer((dt-timezone.localize(datetime.now())).total_seconds(),
                        self.startCapturing, args=(comm, 0))
         self.t.start()
         # print(comm+" Job scheduled at " + datetime.strftime(dt, '%c'))

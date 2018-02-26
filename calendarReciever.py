@@ -8,6 +8,7 @@ import shutil
 # import re
 import icalendar
 import utils
+import pytz
 
 try:
     from cStringIO import StringIO
@@ -35,7 +36,7 @@ def calChangedCB(gcal):
             # Create Cron Job base on schedule
             seconds = time_delta.seconds
             seconds = seconds % 60
-            comm0 = calendarParser.COMM + summary + " " + str(seconds)
+            comm0 = calendarParser.COMM + " " + summary + " " + str(seconds)
 
             # create new Monitor
             job = Monitor(0, comm0, start_time)
@@ -46,10 +47,10 @@ def calChangedCB(gcal):
         mo.stop()
 
     utils.MONITORS = []
-
+    timezone = pytz.timezone("US/Eastern")
     print mo_temp
     for mo in mo_temp:
-        if mo.dt < datetime.now():
+        if mo.dt < timezone.localize(datetime.now()):
             continue
         utils.MONITORS.append(mo)
     for mo in utils.MONITORS:

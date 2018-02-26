@@ -46,7 +46,7 @@ def main(calPath):
     print ''
     utils.printEventDetail(gcal)
 
-    print "\n"
+    print ''
 
     scheduleEvent(gcal, COMM)
     print("scheduled all")
@@ -87,10 +87,10 @@ def updateCal(local_path, url):
 
 def scheduleEvent(gcal, comm):
     ''' Get all details of all scheduled VEVENTs'''
-    print '>event list'
 
     # initialize scheduler for events
     s = sched.scheduler(time.time, time.sleep)
+    timezone = pytz.timezone("US/Eastern")
 
     for component in gcal.walk():
         if component.name == "VEVENT":
@@ -105,7 +105,7 @@ def scheduleEvent(gcal, comm):
             comm0 = COMM + " " + summary + " " + str(seconds)
 
             # create new Monitor
-            if start_time < datetime.now():
+            if start_time < timezone.localize(datetime.now()):
                 continue
             job = Monitor(s, comm0, start_time)
             utils.MONITORS.append(job)
