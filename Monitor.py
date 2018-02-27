@@ -26,10 +26,22 @@ class Monitor:
         return self.comm
 
     def startCapturing(self, comm, _):
-        print(datetime.now())
+        print("==>Starting Capture" + str(datetime.now()))
         # Shell as subprocess
-        subprocess.Popen(self.comm, stdout=subprocess.PIPE, shell=True)
-        # output, error = process.communicate()
+        pr = subprocess.Popen(self.comm, stdout=subprocess.PIPE, shell=True)
+        print("==>Capturing...")
+        _, err = pr.communicate()
+        ret = str(pr.returncode)
+        print("==>Return code: "+ret)
+        if ret is "0":
+            print("==>Capturing successful, uploading all lectures")
+            pu = subprocess.Popen("~/paol-code/scripts/upload/uploadAll.sh", stdout=subprocess.PIPE, shell=True)
+            print("==>Uploading...")
+            _, er = pu.communicate()
+            print("==>Return code: "+str(pu.returncode))
+        else:
+            print("==>Error encountered during capturing: "+ str(err))
+        print("==>Finishing Capture" + str(datetime.now()))
         return
 
     def scheduleJob(self):
