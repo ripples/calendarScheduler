@@ -34,8 +34,7 @@ def calChangedCB(gcal):
             time_delta = end_time - start_time
 
             # Create Cron Job base on schedule
-            seconds = time_delta.seconds
-            seconds = seconds % 60
+            seconds = time_delta.total_seconds()
             comm0 = calendarParser.COMM + " " + summary + " " + str(seconds)
 
             # create new Monitor
