@@ -11,10 +11,7 @@ This program is intended to:
   * pip install icalendar
   * pip install datetime
   * pip install pytz
-  * pip install sched
-  * pip install shutil
-  * pip install urllib
-  * pip install posixpath
+  * pip install requests
   
 ## Usage
 python calendarParser.py & # Start Scheduler and Server listening to incoming calendar
