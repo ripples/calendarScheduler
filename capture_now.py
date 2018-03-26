@@ -36,4 +36,4 @@ if ret is "0":
     print("==>Return code: "+str(pu.returncode))
 else:
     print("==>Error encountered during capturing: "+ str(err))
-print("==>Finishing Capture" + str(datetime.now()))
+print("==>Finishing Capture")
